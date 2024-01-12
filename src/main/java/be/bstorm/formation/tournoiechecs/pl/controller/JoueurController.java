@@ -2,6 +2,7 @@ package be.bstorm.formation.tournoiechecs.pl.controller;
 
 import be.bstorm.formation.tournoiechecs.bll.service.JoueurService;
 import be.bstorm.formation.tournoiechecs.pl.model.form.JoueurForm;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,7 +19,7 @@ public class JoueurController {
     }
 
     @PostMapping("/inscription")
-    public void inscription(@RequestBody JoueurForm joueur) {
+    public void inscription(@RequestBody @Valid JoueurForm joueur) {
         joueurService.inscription(joueur);
     }
 }
