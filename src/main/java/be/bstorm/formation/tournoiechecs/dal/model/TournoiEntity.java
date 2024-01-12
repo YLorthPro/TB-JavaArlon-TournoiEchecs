@@ -4,10 +4,14 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 @Entity
 @Data
+@Table(name = "tournoi")
 public class TournoiEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -29,4 +33,15 @@ public class TournoiEntity {
     private LocalDate dateFinInscriptions;
     private LocalDate dateCreation;
     private LocalDate dateModification;
+
+    @ManyToMany
+    @JoinTable(name = "Tournoi_joueur",
+            joinColumns = @JoinColumn(name = "tournoi_id"),
+            inverseJoinColumns = @JoinColumn(name = "joueur_id"))
+    private List<JoueurEntity> joueurs = new ArrayList<>();
+
+
+    @OneToMany(mappedBy = "tournoi")
+    private List<RencontreEntity> rencontreEntity;
+
 }
