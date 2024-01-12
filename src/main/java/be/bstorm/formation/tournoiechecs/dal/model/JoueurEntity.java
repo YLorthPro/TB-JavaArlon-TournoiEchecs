@@ -12,7 +12,7 @@ public class JoueurEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private Integer id;
+    private Long id;
 
     @Column(unique = true)
     private String pseudo;

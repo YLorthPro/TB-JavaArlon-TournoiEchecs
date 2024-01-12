@@ -30,7 +30,7 @@ public class JoueurServiceTest {
 
     @Test
     public void testInscription_WithELO() {
-        JoueurForm joueurForm = new JoueurForm("John","johnDoe@gmail.com","Test1234=", LocalDate.now().minusYears(20), Genre.GARCON, 1000, Role.JOUEUR);
+        JoueurForm joueurForm = new JoueurForm("John","johnDoe@gmail.com", LocalDate.now().minusYears(20), Genre.GARCON, 1000, Role.JOUEUR);
 
         JoueurEntity joueurEntity = new JoueurEntity();
         joueurEntity.setPseudo("John");
@@ -50,7 +50,7 @@ public class JoueurServiceTest {
     @Test
     public void testInscription_NoELO() {
 
-        JoueurForm joueurForm = new JoueurForm("John","johnDoe@gmail.com","Test1234=", LocalDate.now().minusYears(20), Genre.GARCON, null, Role.JOUEUR);
+        JoueurForm joueurForm = new JoueurForm("John","johnDoe@gmail.com", LocalDate.now().minusYears(20), Genre.GARCON, null, Role.JOUEUR);
         Mockito.when(joueurRepository.save(Mockito.any(JoueurEntity.class))).thenReturn(null);
 
         joueurService.inscription(joueurForm);
