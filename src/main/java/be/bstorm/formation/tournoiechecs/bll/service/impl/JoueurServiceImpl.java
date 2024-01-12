@@ -3,18 +3,31 @@ package be.bstorm.formation.tournoiechecs.bll.service.impl;
 import be.bstorm.formation.tournoiechecs.bll.service.JoueurService;
 import be.bstorm.formation.tournoiechecs.dal.model.JoueurEntity;
 import be.bstorm.formation.tournoiechecs.dal.repository.JoueurRepository;
+import be.bstorm.formation.tournoiechecs.pl.config.security.JWTProvider;
 import be.bstorm.formation.tournoiechecs.pl.model.form.JoueurForm;
+import be.bstorm.formation.tournoiechecs.pl.model.form.LoginForm;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
+import java.util.List;
 
 @Service
 public class JoueurServiceImpl implements JoueurService {
 
     private final JoueurRepository joueurRepository;
+    private final AuthenticationManager authenticationManager;
+    private final JWTProvider jwtProvider;
+    private final PasswordEncoder passwordEncoder;
 
-    public JoueurServiceImpl(JoueurRepository joueurRepository) {
+    public JoueurServiceImpl(JoueurRepository joueurRepository, AuthenticationManager authenticationManager, JWTProvider jwtProvider, PasswordEncoder passwordEncoder) {
         this.joueurRepository = joueurRepository;
+        this.authenticationManager = authenticationManager;
+        this.jwtProvider = jwtProvider;
+        this.passwordEncoder = passwordEncoder;
     }
 
 
@@ -36,6 +49,16 @@ public class JoueurServiceImpl implements JoueurService {
         entity.setRole(joueur.role());
 
         joueurRepository.save(entity);
+    }
+
+    @Override
+    public String login(LoginForm form) {
+        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(form.identifiant(),form.motDePasse()));
+
+        JoueurEntity joueur = joueurRepository.findByPseudoOrEmail(form.identifiant(),form.identifiant())
+                .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouvé"));
+
+        return jwtProvider.generateToken(joueur.getUsername(), joueur.getRole());
     }
 
     private String setMotDePasse() {
