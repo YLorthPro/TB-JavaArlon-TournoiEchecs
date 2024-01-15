@@ -1,5 +1,6 @@
 package be.bstorm.formation.tournoiechecs.bll.service;
 
+import be.bstorm.formation.tournoiechecs.bll.models.models.JoueurScore;
 import be.bstorm.formation.tournoiechecs.dal.model.Resultat;
 import be.bstorm.formation.tournoiechecs.dal.model.TournoiEntity;
 import be.bstorm.formation.tournoiechecs.pl.model.form.TournoiForm;
@@ -22,4 +23,5 @@ public interface TournoiService {
     void demarrerTournoi(Long tournoiId);
     void modifierResultatRencontre(Long rencontreId, Resultat resultat);
     void passerTourSuivant(Long tournoiId);
+    List<JoueurScore>afficherTableauScores(Long tournoiId, int ronde);
 }

@@ -1,5 +1,6 @@
 package be.bstorm.formation.tournoiechecs.pl.controller;
 
+import be.bstorm.formation.tournoiechecs.bll.models.models.JoueurScore;
 import be.bstorm.formation.tournoiechecs.bll.service.TournoiService;
 import be.bstorm.formation.tournoiechecs.dal.model.Resultat;
 import be.bstorm.formation.tournoiechecs.pl.model.dto.TournoiListe;
@@ -85,5 +86,11 @@ public class TournoiController {
     @PostMapping("/tourSuivant/{tournoiId:[0-9]+}")
     public void passerTourSuivant(@PathVariable Long tournoiId) {
         tournoiService.passerTourSuivant(tournoiId);
+    }
+
+    @PreAuthorize("permitAll()")
+    @GetMapping("/{tournoiId:[0-9]+}/tableauScores/{ronde:[0-9]+}")
+    public ResponseEntity<List<JoueurScore>> afficherTableauScores(@PathVariable Long tournoiId, @PathVariable int ronde) {
+        return ResponseEntity.ok(tournoiService.afficherTableauScores(tournoiId, ronde));
     }
 }

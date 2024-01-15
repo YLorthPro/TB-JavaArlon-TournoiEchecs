@@ -1,14 +1,16 @@
 package be.bstorm.formation.tournoiechecs.bll.service.impl;
 
-import be.bstorm.formation.tournoiechecs.bll.models.InscriptionTournoiException;
-import be.bstorm.formation.tournoiechecs.bll.models.RencontreException;
-import be.bstorm.formation.tournoiechecs.bll.models.TournoiEnCoursException;
-import be.bstorm.formation.tournoiechecs.bll.models.TournoiException;
+import be.bstorm.formation.tournoiechecs.bll.models.exception.InscriptionTournoiException;
+import be.bstorm.formation.tournoiechecs.bll.models.exception.RencontreException;
+import be.bstorm.formation.tournoiechecs.bll.models.exception.TournoiEnCoursException;
+import be.bstorm.formation.tournoiechecs.bll.models.exception.TournoiException;
+import be.bstorm.formation.tournoiechecs.bll.models.models.JoueurScore;
 import be.bstorm.formation.tournoiechecs.bll.service.TournoiService;
 import be.bstorm.formation.tournoiechecs.dal.model.*;
 import be.bstorm.formation.tournoiechecs.dal.repository.JoueurRepository;
 import be.bstorm.formation.tournoiechecs.dal.repository.RencontreRepository;
 import be.bstorm.formation.tournoiechecs.dal.repository.TournoiRepository;
+import be.bstorm.formation.tournoiechecs.pl.model.dto.Joueur;
 import be.bstorm.formation.tournoiechecs.pl.model.form.TournoiForm;
 import be.bstorm.formation.tournoiechecs.pl.model.form.TournoiSearchForm;
 import jakarta.persistence.EntityNotFoundException;
@@ -21,7 +23,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -194,6 +195,46 @@ public class TournoiServiceImpl implements TournoiService {
 
         tournoi.setRonde(tournoi.getRonde() + 1);
         tournoiRepository.save(tournoi);
+    }
+
+    @Override
+    public List<JoueurScore> afficherTableauScores(Long tournoiId, int ronde) {
+
+        List<JoueurEntity> joueurs = tournoiRepository.findById(tournoiId).orElseThrow(()-> new EntityNotFoundException("Tournoi non trouvé")).getJoueurs();
+
+        Specification<RencontreEntity> spec = (root, query, criteriaBuilder) ->
+                criteriaBuilder.and(criteriaBuilder.equal(root.get("tournoiId"),tournoiId), criteriaBuilder.lessThanOrEqualTo(root.get("ronde"), ronde));
+
+        List<RencontreEntity> rencontresRonde = rencontreRepository.findAll(spec);
+
+        List<JoueurScore> tableauScores = new ArrayList<>();
+
+        joueurs.forEach(j->{
+
+            JoueurScore joueur = new JoueurScore();
+            joueur.setNom(j.getPseudo());
+
+            List<RencontreEntity> rencontresJouees = rencontresRonde.stream()
+                    .filter(rencontreEntity -> rencontreEntity.getJoueurBlanc().equals(j)||rencontreEntity.getJoueurNoir().equals(j))
+                    .toList();
+
+            for (RencontreEntity rencontresJouee : rencontresJouees) {
+                joueur.setRencontreJouees(joueur.getRencontreJouees()+1);
+                if(rencontresJouee.getResultat()==Resultat.EGALITE){
+                    joueur.setScore(joueur.getScore()+0.5);
+                    joueur.setEgalite(joueur.getEgalite()+1);
+                } else if ((rencontresJouee.getResultat()==Resultat.BLANC && rencontresJouee.getJoueurBlanc().equals(j)) || (rencontresJouee.getResultat()==Resultat.NOIR && rencontresJouee.getJoueurNoir().equals(j))){
+                    joueur.setScore(joueur.getScore()+1);
+                    joueur.setVictoires(joueur.getVictoires()+1);
+                } else if((rencontresJouee.getResultat()==Resultat.NOIR && rencontresJouee.getJoueurBlanc().equals(j)) || (rencontresJouee.getResultat()==Resultat.BLANC && rencontresJouee.getJoueurNoir().equals(j)))
+                    joueur.setDefaites(joueur.getDefaites()+1);
+            }
+
+            tableauScores.add(joueur);
+
+        });
+
+        return tableauScores;
     }
 
     private void createRencontre(TournoiEntity tournoi, JoueurEntity joueurBlanc, JoueurEntity joueurNoir, int ronde) {

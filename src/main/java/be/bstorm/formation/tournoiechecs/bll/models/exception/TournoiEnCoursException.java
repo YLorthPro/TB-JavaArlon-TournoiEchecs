@@ -1,4 +1,4 @@
-package be.bstorm.formation.tournoiechecs.bll.models;
+package be.bstorm.formation.tournoiechecs.bll.models.exception;
 
 public class TournoiEnCoursException extends RuntimeException{
     public TournoiEnCoursException() {

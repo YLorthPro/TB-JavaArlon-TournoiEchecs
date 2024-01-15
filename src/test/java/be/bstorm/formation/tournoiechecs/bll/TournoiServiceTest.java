@@ -1,9 +1,10 @@
 package be.bstorm.formation.tournoiechecs.bll;
 
-import be.bstorm.formation.tournoiechecs.bll.models.InscriptionTournoiException;
-import be.bstorm.formation.tournoiechecs.bll.models.RencontreException;
-import be.bstorm.formation.tournoiechecs.bll.models.TournoiEnCoursException;
-import be.bstorm.formation.tournoiechecs.bll.models.TournoiException;
+import be.bstorm.formation.tournoiechecs.bll.models.exception.InscriptionTournoiException;
+import be.bstorm.formation.tournoiechecs.bll.models.exception.RencontreException;
+import be.bstorm.formation.tournoiechecs.bll.models.exception.TournoiEnCoursException;
+import be.bstorm.formation.tournoiechecs.bll.models.exception.TournoiException;
+import be.bstorm.formation.tournoiechecs.bll.models.models.JoueurScore;
 import be.bstorm.formation.tournoiechecs.bll.service.impl.TournoiServiceImpl;
 import be.bstorm.formation.tournoiechecs.dal.model.*;
 import be.bstorm.formation.tournoiechecs.dal.repository.JoueurRepository;
@@ -772,6 +773,119 @@ public class TournoiServiceTest {
         verify(tournoiRepository, times(1)).findById(tournoiId);
         verify(rencontreRepository, times(1)).findAll(any(Specification.class));
         verifyNoMoreInteractions(tournoiRepository);
+    }
+
+    @Test
+    void testAfficherTableauScores() {
+        Long tournoiId = 1L;
+        int ronde = 1;
+
+        TournoiEntity tournoi = new TournoiEntity();
+        tournoi.setId(tournoiId);
+        tournoi.setRonde(ronde);
+
+        JoueurEntity joueur1 = new JoueurEntity();
+        joueur1.setId(1L);
+        joueur1.setPseudo("test1");
+
+        JoueurEntity joueur2 = new JoueurEntity();
+        joueur2.setId(2L);
+        joueur2.setPseudo("test2");
+
+        tournoi.setJoueurs(List.of(joueur1, joueur2));
+
+        RencontreEntity rencontre1 = new RencontreEntity();
+        rencontre1.setJoueurBlanc(joueur1);
+        rencontre1.setJoueurNoir(joueur2);
+        rencontre1.setResultat(Resultat.BLANC);
+
+        RencontreEntity rencontre2 = new RencontreEntity();
+        rencontre2.setJoueurBlanc(joueur2);
+        rencontre2.setJoueurNoir(joueur1);
+        rencontre2.setResultat(Resultat.EGALITE);
+
+        when(tournoiRepository.findById(tournoiId)).thenReturn(Optional.of(tournoi));
+        when(rencontreRepository.findAll(any(Specification.class))).thenReturn(List.of(rencontre1, rencontre2));
+
+        List<JoueurScore> scores = tournoiService.afficherTableauScores(tournoiId, ronde);
+
+        assertNotNull(scores);
+        assertEquals(2, scores.size());
+
+        // Validation des scores du joueur 1
+        JoueurScore score1 = scores.stream().filter(score -> score.getNom().equals(
+                joueur1.getPseudo())).findFirst().orElse(null);
+        assertNotNull(score1);
+        assertEquals(2, score1.getRencontreJouees());
+        assertEquals(1, score1.getVictoires());
+        assertEquals(1, score1.getEgalite());
+        assertEquals(1.5, score1.getScore());
+
+        // Validation des scores du joueur 2
+        JoueurScore score2 = scores.stream().filter(score -> score.getNom().equals(joueur2.getPseudo())).findFirst().orElse(null);
+        assertNotNull(score2);
+        assertEquals(2, score2.getRencontreJouees());
+        assertEquals(0, score2.getVictoires());
+        assertEquals(1, score2.getEgalite());
+        assertEquals(0.5, score2.getScore());
+    }
+
+    @Test
+    void testAfficherTableauScores_TournoiNotFound() {
+        Long tournoiId = 1L;
+        int ronde = 1;
+
+        when(tournoiRepository.findById(tournoiId)).thenReturn(Optional.empty());
+
+        EntityNotFoundException exception = assertThrows(EntityNotFoundException.class, () -> {
+            tournoiService.afficherTableauScores(tournoiId, ronde);
+        });
+
+        assertEquals("Tournoi non trouvé", exception.getMessage());
+    }
+
+    @Test
+    void testAfficherTableauScores_AucunJoueur() {
+        Long tournoiId = 1L;
+        int ronde = 1;
+
+        TournoiEntity tournoi = new TournoiEntity();
+        tournoi.setId(tournoiId);
+        tournoi.setRonde(ronde);
+        tournoi.setJoueurs(new ArrayList<>());
+
+        when(tournoiRepository.findById(tournoiId)).thenReturn(Optional.of(tournoi));
+
+        List<JoueurScore> scores = tournoiService.afficherTableauScores(tournoiId, ronde);
+
+        assertNotNull(scores);
+        assertTrue(scores.isEmpty());
+    }
+
+    @Test
+    void testAfficherTableauScores_AucuneRencontre() {
+        Long tournoiId = 1L;
+        int ronde = 1;
+
+        TournoiEntity tournoi = new TournoiEntity();
+        tournoi.setId(tournoiId);
+        tournoi.setRonde(ronde);
+
+        JoueurEntity joueur = new JoueurEntity();
+        joueur.setId(1L);
+        joueur.setPseudo("test");
+        tournoi.setJoueurs(List.of(joueur));
+
+        when(tournoiRepository.findById(tournoiId)).thenReturn(Optional.of(tournoi));
+        when(rencontreRepository.findAll(any(Specification.class))).thenReturn(new ArrayList<>());
+
+        List<JoueurScore> scores = tournoiService.afficherTableauScores(tournoiId, ronde);
+
+        assertNotNull(scores);
+        assertFalse(scores.isEmpty());
+        assertEquals(0, scores.get(0).getRencontreJouees());
+        assertEquals(0, scores.get(0).getVictoires());
+        assertEquals(0, scores.get(0).getScore());
     }
 
 }
