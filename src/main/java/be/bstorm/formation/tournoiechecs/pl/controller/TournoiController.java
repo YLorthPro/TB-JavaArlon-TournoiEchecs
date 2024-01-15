@@ -61,4 +61,10 @@ public class TournoiController {
     public void inscriptionTournoi(@PathVariable Long tournoiId, Authentication authentication) {
         tournoiService.inscriptionTournoi(tournoiId, authentication.getName());
     }
+
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/desinscription/{tournoiId:[0-9]+}")
+    public void desinscriptionTournoi(@PathVariable Long tournoiId, Authentication authentication) {
+        tournoiService.desinscriptionTournoi(tournoiId, authentication.getName());
+    }
 }

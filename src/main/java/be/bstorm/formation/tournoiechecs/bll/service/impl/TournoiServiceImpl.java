@@ -98,6 +98,18 @@ public class TournoiServiceImpl implements TournoiService {
 
     }
 
+    @Override
+    public void desinscriptionTournoi(Long tournoiId, String login) {
+        TournoiEntity tournoi = tournoiRepository.findById(tournoiId).orElseThrow(() -> new EntityNotFoundException("Tournoi non trouvé"));
+        JoueurEntity joueur = joueurRepository.findByPseudoOrEmail(login, login).orElseThrow(() -> new EntityNotFoundException("Joueur non trouvé"));
+        if(!isRegistered(tournoiId, joueur.getId()) || tournoi.getStatut()!=Statut.EN_ATTENTE_DE_JOUEURS)
+            throw new InscriptionTournoiException("Impossible de se désinscrire du tournoi");
+
+        tournoi.getJoueurs().remove(joueur);
+        tournoiRepository.save(tournoi);
+    }
+
+
     public boolean canRegister(Long tournoiId, Long joueurId){
 
         // Récupérer les entités de la base de données

@@ -459,5 +459,121 @@ public class TournoiServiceTest {
 
     }
 
+    @Test
+    void testDesinscriptionTournoi_OK() {
+
+        Long tournoiId = 1L;
+        String login = "test";
+
+        JoueurEntity joueur = new JoueurEntity();
+        joueur.setPseudo(login);
+        joueur.setEmail(login);
+        joueur.setId(1L);
+
+        TournoiEntity tournoi = new TournoiEntity();
+        tournoi.setStatut(Statut.EN_ATTENTE_DE_JOUEURS);
+        tournoi.getJoueurs().add(joueur);
+
+        when(tournoiRepository.findById(tournoiId)).thenReturn(Optional.of(tournoi));
+        when(joueurRepository.findByPseudoOrEmail(login, login)).thenReturn(Optional.of(joueur));
+        when(joueurRepository.findById(joueur.getId())).thenReturn(Optional.of(joueur));
+
+        tournoiService.desinscriptionTournoi(tournoiId, login);
+
+        assertFalse(tournoi.getJoueurs().contains(joueur));
+        verify(tournoiRepository, times(1)).save(tournoi);
+    }
+
+    @Test
+    void testDesinscriptionTournoi_TournoiNonExistant() {
+        // Arrange
+        Long tournoiId = 1L;
+        String login = "test";
+
+        // Ici nous supposons que le tournoi n'existe pas.
+        when(tournoiRepository.findById(tournoiId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(EntityNotFoundException.class, () -> {
+            tournoiService.desinscriptionTournoi(tournoiId, login);
+        });
+    }
+
+    @Test
+    void testDesinscriptionTournoi_TournoiNotFound() {
+        Long tournoiId = 1L;
+        String login = "test";
+
+        when(tournoiRepository.findById(tournoiId)).thenReturn(Optional.empty());
+
+        EntityNotFoundException exception = assertThrows(EntityNotFoundException.class, () -> {
+            tournoiService.desinscriptionTournoi(tournoiId, login);
+        });
+
+        assertEquals("Tournoi non trouvé", exception.getMessage());
+    }
+
+    @Test
+    void testDesinscriptionTournoi_JoueurNotFound() {
+        Long tournoiId = 1L;
+        String login = "test";
+
+        TournoiEntity tournoi = new TournoiEntity();
+
+        when(tournoiRepository.findById(tournoiId)).thenReturn(Optional.of(tournoi));
+        when(joueurRepository.findByPseudoOrEmail(login, login)).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class, () -> {
+            tournoiService.desinscriptionTournoi(tournoiId, login);
+        });
+    }
+
+    @Test
+    void testDesinscriptionTournoi_TournoiNonEnAttente() {
+        Long tournoiId = 1L;
+        String login = "test";
+
+        JoueurEntity joueur = new JoueurEntity();
+        joueur.setPseudo(login);
+        joueur.setEmail(login);
+        joueur.setId(1L);
+
+        TournoiEntity tournoi = new TournoiEntity();
+        tournoi.setStatut(Statut.EN_COURS);
+        tournoi.getJoueurs().add(joueur);
+
+        when(tournoiRepository.findById(tournoiId)).thenReturn(Optional.of(tournoi));
+        when(joueurRepository.findByPseudoOrEmail(login, login)).thenReturn(Optional.of(joueur));
+        when(joueurRepository.findById(joueur.getId())).thenReturn(Optional.of(joueur));
+
+        assertThrows(InscriptionTournoiException.class, () -> {
+            tournoiService.desinscriptionTournoi(tournoiId, login);
+        });
+    }
+
+    @Test
+    void testDesinscriptionTournoi_JoueurPasInscrit() {
+        Long tournoiId = 1L;
+        String login = "test";
+
+        JoueurEntity joueur = new JoueurEntity();
+        joueur.setPseudo(login);
+        joueur.setEmail(login);
+        joueur.setId(1L);
+
+        TournoiEntity tournoi = new TournoiEntity();
+        tournoi.setStatut(Statut.EN_ATTENTE_DE_JOUEURS);
+
+        when(tournoiRepository.findById(tournoiId)).thenReturn(Optional.of(tournoi));
+        when(joueurRepository.findByPseudoOrEmail(login, login)).thenReturn(Optional.of(joueur));
+        when(joueurRepository.findById(joueur.getId())).thenReturn(Optional.of(joueur));
+
+        InscriptionTournoiException exception = assertThrows(InscriptionTournoiException.class, () -> {
+            tournoiService.desinscriptionTournoi(tournoiId, login);
+        });
+
+        assertEquals("Impossible de se désinscrire du tournoi", exception.getMessage());
+    }
+
 
 }
