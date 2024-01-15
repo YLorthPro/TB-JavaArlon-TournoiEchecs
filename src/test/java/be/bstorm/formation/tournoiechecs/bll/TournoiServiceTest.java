@@ -1,6 +1,7 @@
 package be.bstorm.formation.tournoiechecs.bll;
 
 import be.bstorm.formation.tournoiechecs.bll.models.InscriptionTournoiException;
+import be.bstorm.formation.tournoiechecs.bll.models.RencontreException;
 import be.bstorm.formation.tournoiechecs.bll.models.TournoiEnCoursException;
 import be.bstorm.formation.tournoiechecs.bll.models.TournoiException;
 import be.bstorm.formation.tournoiechecs.bll.service.impl.TournoiServiceImpl;
@@ -680,6 +681,44 @@ public class TournoiServiceTest {
 
         verify(tournoiRepository, times(1)).findById(tournoiId);
         verify(tournoiRepository, times(1)).save(any(TournoiEntity.class));
+    }
+
+    @Test
+    void testModifierResultatRencontre() {
+        Long rencontreId = 1L;
+        RencontreEntity rencontre = new RencontreEntity();
+        rencontre.setId(rencontreId);
+        TournoiEntity tournoi = new TournoiEntity();
+        tournoi.setRonde(1);
+        rencontre.setNumeroRonde(1);
+        rencontre.setTournoi(tournoi);
+
+        when(rencontreRepository.findById(rencontreId)).thenReturn(Optional.of(rencontre));
+
+        tournoiService.modifierResultatRencontre(rencontreId, Resultat.BLANC);
+
+        verify(rencontreRepository, times(1)).findById(rencontreId);
+        verify(rencontreRepository, times(1)).save(any(RencontreEntity.class));
+    }
+
+    @Test
+    void testModifierResultatRencontre_RencontreNonCourante() {
+        Long rencontreId = 1L;
+        RencontreEntity rencontre = new RencontreEntity();
+        rencontre.setId(rencontreId);
+        TournoiEntity tournoi = new TournoiEntity();
+        tournoi.setRonde(2);
+        rencontre.setNumeroRonde(1);
+        rencontre.setTournoi(tournoi);
+
+        when(rencontreRepository.findById(rencontreId)).thenReturn(Optional.of(rencontre));
+
+        assertThrows(RencontreException.class, () -> {
+            tournoiService.modifierResultatRencontre(rencontreId, Resultat.BLANC);
+        });
+
+        verify(rencontreRepository, times(1)).findById(rencontreId);
+        verifyNoMoreInteractions(rencontreRepository);
     }
 
 }

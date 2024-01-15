@@ -1,6 +1,7 @@
 package be.bstorm.formation.tournoiechecs.pl.controller;
 
 import be.bstorm.formation.tournoiechecs.bll.service.TournoiService;
+import be.bstorm.formation.tournoiechecs.dal.model.Resultat;
 import be.bstorm.formation.tournoiechecs.pl.model.dto.TournoiListe;
 import be.bstorm.formation.tournoiechecs.pl.model.dto.TournoiUnique;
 import be.bstorm.formation.tournoiechecs.pl.model.form.TournoiForm;
@@ -72,5 +73,11 @@ public class TournoiController {
     @PostMapping("/demarrer/{id:[0-9]+}")
     public void demarrerTournoi(@PathVariable Long id) {
         tournoiService.demarrerTournoi(id);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/rencontre/{rencontreId:[0-9]+}/resultat")
+    public void modifierResultatRencontre(@PathVariable Long rencontreId, @RequestBody Resultat resultat) {
+        tournoiService.modifierResultatRencontre(rencontreId, resultat);
     }
 }

@@ -1,6 +1,7 @@
 package be.bstorm.formation.tournoiechecs.bll.service.impl;
 
 import be.bstorm.formation.tournoiechecs.bll.models.InscriptionTournoiException;
+import be.bstorm.formation.tournoiechecs.bll.models.RencontreException;
 import be.bstorm.formation.tournoiechecs.bll.models.TournoiEnCoursException;
 import be.bstorm.formation.tournoiechecs.bll.models.TournoiException;
 import be.bstorm.formation.tournoiechecs.bll.service.TournoiService;
@@ -83,7 +84,7 @@ public class TournoiServiceImpl implements TournoiService {
     public Page<TournoiEntity> recherche(TournoiSearchForm form, Pageable pageable) {
         return tournoiRepository.findAll(specification(form),pageable);
     }
-
+    @Override
     public Optional<TournoiEntity> getTournoiById(Long id) {
         return tournoiRepository.findById(id);
     }
@@ -165,6 +166,19 @@ public class TournoiServiceImpl implements TournoiService {
         tournoiRepository.save(tournoi);
     }
 
+    @Override
+    public void modifierResultatRencontre(Long rencontreId, Resultat resultat) {
+        RencontreEntity rencontre = rencontreRepository.findById(rencontreId).orElseThrow(() -> new EntityNotFoundException("Rencontre non trouvée"));
+        TournoiEntity tournoi = rencontre.getTournoi();
+
+        if (rencontre.getNumeroRonde()!=tournoi.getRonde()) {
+            throw new RencontreException("On ne peut modifier le résultat d'une rencontre que si elle fait partie de la ronde courante");
+        }
+
+        rencontre.setResultat(resultat);
+        rencontreRepository.save(rencontre);
+    }
+
     private void createRencontre(TournoiEntity tournoi, JoueurEntity joueurBlanc, JoueurEntity joueurNoir, int ronde) {
         RencontreEntity rencontre = new RencontreEntity();
         rencontre.setTournoi(tournoi);
@@ -173,7 +187,6 @@ public class TournoiServiceImpl implements TournoiService {
         rencontre.setNumeroRonde(ronde);
         rencontreRepository.save(rencontre);
     }
-
 
     public boolean canRegister(Long tournoiId, Long joueurId){
 

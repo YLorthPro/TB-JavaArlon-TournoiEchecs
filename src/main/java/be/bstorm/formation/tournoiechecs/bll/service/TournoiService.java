@@ -1,5 +1,6 @@
 package be.bstorm.formation.tournoiechecs.bll.service;
 
+import be.bstorm.formation.tournoiechecs.dal.model.Resultat;
 import be.bstorm.formation.tournoiechecs.dal.model.TournoiEntity;
 import be.bstorm.formation.tournoiechecs.pl.model.form.TournoiForm;
 import be.bstorm.formation.tournoiechecs.pl.model.form.TournoiSearchForm;
@@ -13,12 +14,11 @@ public interface TournoiService {
 
     void creationTournoi(TournoiForm form);
     void suppressionTournoi(Long id);
-
     List<TournoiEntity> top10();
-
     Page<TournoiEntity> recherche(TournoiSearchForm form, Pageable pageable);
     Optional<TournoiEntity> getTournoiById(Long id);
     void inscriptionTournoi(Long tournoiId, String login);
     void desinscriptionTournoi(Long tournoiId, String login);
     void demarrerTournoi(Long tournoiId);
+    void modifierResultatRencontre(Long rencontreId, Resultat resultat);
 }
