@@ -80,4 +80,10 @@ public class TournoiController {
     public void modifierResultatRencontre(@PathVariable Long rencontreId, @RequestBody Resultat resultat) {
         tournoiService.modifierResultatRencontre(rencontreId, resultat);
     }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/tourSuivant/{tournoiId:[0-9]+}")
+    public void passerTourSuivant(@PathVariable Long tournoiId) {
+        tournoiService.passerTourSuivant(tournoiId);
+    }
 }

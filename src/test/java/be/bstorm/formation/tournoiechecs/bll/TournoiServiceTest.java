@@ -721,4 +721,57 @@ public class TournoiServiceTest {
         verifyNoMoreInteractions(rencontreRepository);
     }
 
+    @Test
+    void testPasserTourSuivant_OK() {
+        Long tournoiId = 1L;
+        TournoiEntity tournoi = new TournoiEntity();
+        tournoi.setId(tournoiId);
+        tournoi.setRonde(1);
+
+        RencontreEntity rencontre = new RencontreEntity();
+        rencontre.setTournoi(tournoi);
+        rencontre.setNumeroRonde(1);
+        rencontre.setResultat(Resultat.BLANC);
+
+        when(tournoiRepository.findById(tournoiId)).thenReturn(Optional.of(tournoi));
+        when(rencontreRepository.findAll(any(Specification.class))).thenReturn(List.of(rencontre));
+
+        tournoiService.passerTourSuivant(tournoiId);
+
+        verify(tournoiRepository, times(1)).findById(tournoiId);
+        verify(rencontreRepository, times(1)).findAll(any(Specification.class));
+        verify(tournoiRepository, times(1)).save(any(TournoiEntity.class));
+    }
+
+    @Test
+    void testPasserTourSuivant_TournoiNotFound(){
+        EntityNotFoundException exception = assertThrows(EntityNotFoundException.class,()->tournoiService.passerTourSuivant(-99L));
+
+        assertEquals("Tournoi non trouvé", exception.getMessage());
+    }
+
+    @Test
+    void testPasserTourSuivant_RencontresNonJouees() {
+        Long tournoiId = 1L;
+        TournoiEntity tournoi = new TournoiEntity();
+        tournoi.setId(tournoiId);
+        tournoi.setRonde(1);
+
+        RencontreEntity rencontre = new RencontreEntity();
+        rencontre.setTournoi(tournoi);
+        rencontre.setNumeroRonde(1);
+        rencontre.setResultat(null);
+
+        when(tournoiRepository.findById(tournoiId)).thenReturn(Optional.of(tournoi));
+        when(rencontreRepository.findAll(any(Specification.class))).thenReturn(List.of(rencontre));
+
+        assertThrows(TournoiException.class, () -> {
+            tournoiService.passerTourSuivant(tournoiId);
+        });
+
+        verify(tournoiRepository, times(1)).findById(tournoiId);
+        verify(rencontreRepository, times(1)).findAll(any(Specification.class));
+        verifyNoMoreInteractions(tournoiRepository);
+    }
+
 }

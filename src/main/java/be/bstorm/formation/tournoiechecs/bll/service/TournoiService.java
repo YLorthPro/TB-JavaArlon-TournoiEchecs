@@ -21,4 +21,5 @@ public interface TournoiService {
     void desinscriptionTournoi(Long tournoiId, String login);
     void demarrerTournoi(Long tournoiId);
     void modifierResultatRencontre(Long rencontreId, Resultat resultat);
+    void passerTourSuivant(Long tournoiId);
 }
