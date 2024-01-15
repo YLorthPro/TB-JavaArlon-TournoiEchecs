@@ -18,4 +18,5 @@ public interface TournoiService {
 
     Page<TournoiEntity> recherche(TournoiSearchForm form, Pageable pageable);
     Optional<TournoiEntity> getTournoiById(Long id);
+    void inscriptionTournoi(Long tournoiId, String login);
 }

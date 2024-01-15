@@ -22,8 +22,8 @@ public class TournoiEntity {
     private String lieu;
     private int nombreMinJoueurs;
     private int nombreMaxJoueurs;
-    private int eLOMin;
-    private int eLOMax;
+    private Integer eLOMin;
+    private Integer eLOMax;
     @Enumerated(EnumType.STRING)
     private Set<Categorie> categories;
     @Enumerated(EnumType.STRING)

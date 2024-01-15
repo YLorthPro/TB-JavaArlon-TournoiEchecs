@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -53,5 +54,11 @@ public class TournoiController {
     @GetMapping("/{id:[0-9]+}")
     public ResponseEntity<TournoiUnique> getTournoiById(@PathVariable Long id) {
         return ResponseEntity.ok(tournoiService.getTournoiById(id).map(TournoiUnique::fromBll).orElseThrow(()->new EntityNotFoundException("Tournoi pas trouvé")));
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/inscription/{tournoiId:[0-9]+}")
+    public void inscriptionTournoi(@PathVariable Long tournoiId, Authentication authentication) {
+        tournoiService.inscriptionTournoi(tournoiId, authentication.getName());
     }
 }
