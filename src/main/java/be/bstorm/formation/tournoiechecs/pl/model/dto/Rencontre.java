@@ -1,6 +1,7 @@
 package be.bstorm.formation.tournoiechecs.pl.model.dto;
 
 import be.bstorm.formation.tournoiechecs.dal.model.RencontreEntity;
+import be.bstorm.formation.tournoiechecs.dal.model.Resultat;
 
 public record Rencontre(
     Long id,
@@ -8,7 +9,7 @@ public record Rencontre(
     String pseudoJoueurBlanc,
     String pseudoJoueurNoir,
     int ronde,
-    String resultat
+    Resultat resultat
 
 ) {
     public static Rencontre fromBll(RencontreEntity entity){

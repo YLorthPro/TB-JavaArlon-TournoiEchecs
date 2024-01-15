@@ -20,4 +20,5 @@ public interface TournoiService {
     Optional<TournoiEntity> getTournoiById(Long id);
     void inscriptionTournoi(Long tournoiId, String login);
     void desinscriptionTournoi(Long tournoiId, String login);
+    void demarrerTournoi(Long tournoiId);
 }

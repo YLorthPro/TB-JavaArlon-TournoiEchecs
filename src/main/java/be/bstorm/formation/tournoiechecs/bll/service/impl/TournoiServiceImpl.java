@@ -2,9 +2,11 @@ package be.bstorm.formation.tournoiechecs.bll.service.impl;
 
 import be.bstorm.formation.tournoiechecs.bll.models.InscriptionTournoiException;
 import be.bstorm.formation.tournoiechecs.bll.models.TournoiEnCoursException;
+import be.bstorm.formation.tournoiechecs.bll.models.TournoiException;
 import be.bstorm.formation.tournoiechecs.bll.service.TournoiService;
 import be.bstorm.formation.tournoiechecs.dal.model.*;
 import be.bstorm.formation.tournoiechecs.dal.repository.JoueurRepository;
+import be.bstorm.formation.tournoiechecs.dal.repository.RencontreRepository;
 import be.bstorm.formation.tournoiechecs.dal.repository.TournoiRepository;
 import be.bstorm.formation.tournoiechecs.pl.model.form.TournoiForm;
 import be.bstorm.formation.tournoiechecs.pl.model.form.TournoiSearchForm;
@@ -18,6 +20,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,11 +29,14 @@ public class TournoiServiceImpl implements TournoiService {
 
     private final TournoiRepository tournoiRepository;
     private final JoueurRepository joueurRepository;
+    private final RencontreRepository rencontreRepository;
 
     public TournoiServiceImpl(TournoiRepository tournoiRepository,
-                              JoueurRepository joueurRepository) {
+                              JoueurRepository joueurRepository,
+                              RencontreRepository rencontreRepository) {
         this.tournoiRepository = tournoiRepository;
         this.joueurRepository = joueurRepository;
+        this.rencontreRepository = rencontreRepository;
     }
 
 
@@ -107,6 +113,65 @@ public class TournoiServiceImpl implements TournoiService {
 
         tournoi.getJoueurs().remove(joueur);
         tournoiRepository.save(tournoi);
+    }
+
+    @Override
+    public void demarrerTournoi(Long tournoiId){
+
+        // Récupérer le tournoi en fonction de l'ID
+        TournoiEntity tournoi = tournoiRepository.findById(tournoiId).orElseThrow(() -> new EntityNotFoundException("Tournoi non trouvé"));
+
+        // Vérifier si le nombre minimum de participants est atteint
+        if(tournoi.getJoueurs().size() < tournoi.getNombreMinJoueurs())
+            throw new TournoiException("Nombre minimum de participants non atteint");
+
+        // Vérifier si la date de fin des inscriptions est dépassée
+        if (tournoi.getDateFinInscriptions().isAfter(LocalDate.now()))
+            throw new TournoiException("La date de fin des inscriptions n'est pas dépassée");
+
+        // Initialisation du tournoi
+        tournoi.setRonde(1);
+        tournoi.setDateModification(LocalDate.now());
+
+        // Générer toutes les rencontres pour un Round Robin
+        List<JoueurEntity> joueurs = new ArrayList<>(tournoi.getJoueurs());
+
+        // Le nombre de joueurs doit être pair pour un Round Robin
+        boolean isNombreJoueursImpair = joueurs.size() % 2 != 0;
+        if (isNombreJoueursImpair) {
+            joueurs.add(null);
+        }
+
+        // Le nombre total des rondes est égal au nombre de joueurs moins un
+        int numRondes = joueurs.size() - 1;
+
+        for (int ronde = 0; ronde < numRondes; ronde++) {
+            for (int i = 0; i < joueurs.size() / 2; i++) {
+                JoueurEntity joueurBlanc = joueurs.get(i);
+                JoueurEntity joueurNoir = joueurs.get(joueurs.size() - 1 - i);
+
+                // Ne créer une rencontre que si les deux joueurs sont réels
+                if (joueurBlanc != null && joueurNoir != null) {
+                    // Créer une rencontre aller
+                    createRencontre(tournoi, joueurBlanc, joueurNoir, ronde + 1);
+                    // Créer une rencontre retour
+                    createRencontre(tournoi, joueurNoir, joueurBlanc, ronde + numRondes + 1);
+                }
+            }
+            // Rotation des joueurs, à l'exception du premier
+            joueurs.add(1, joueurs.remove(joueurs.size() - 1));
+        }
+
+        tournoiRepository.save(tournoi);
+    }
+
+    private void createRencontre(TournoiEntity tournoi, JoueurEntity joueurBlanc, JoueurEntity joueurNoir, int ronde) {
+        RencontreEntity rencontre = new RencontreEntity();
+        rencontre.setTournoi(tournoi);
+        rencontre.setJoueurBlanc(joueurBlanc);
+        rencontre.setJoueurNoir(joueurNoir);
+        rencontre.setNumeroRonde(ronde);
+        rencontreRepository.save(rencontre);
     }
 
 

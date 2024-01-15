@@ -2,9 +2,11 @@ package be.bstorm.formation.tournoiechecs.bll;
 
 import be.bstorm.formation.tournoiechecs.bll.models.InscriptionTournoiException;
 import be.bstorm.formation.tournoiechecs.bll.models.TournoiEnCoursException;
+import be.bstorm.formation.tournoiechecs.bll.models.TournoiException;
 import be.bstorm.formation.tournoiechecs.bll.service.impl.TournoiServiceImpl;
 import be.bstorm.formation.tournoiechecs.dal.model.*;
 import be.bstorm.formation.tournoiechecs.dal.repository.JoueurRepository;
+import be.bstorm.formation.tournoiechecs.dal.repository.RencontreRepository;
 import be.bstorm.formation.tournoiechecs.dal.repository.TournoiRepository;
 import be.bstorm.formation.tournoiechecs.pl.model.form.TournoiForm;
 import be.bstorm.formation.tournoiechecs.pl.model.form.TournoiSearchForm;
@@ -35,6 +37,9 @@ import static org.mockito.Mockito.*;
 public class TournoiServiceTest {
     @InjectMocks
     TournoiServiceImpl tournoiService;
+
+    @Mock
+    RencontreRepository rencontreRepository;
 
     @Mock
     TournoiRepository tournoiRepository;
@@ -575,5 +580,106 @@ public class TournoiServiceTest {
         assertEquals("Impossible de se désinscrire du tournoi", exception.getMessage());
     }
 
+    @Test
+    void testDemarrerTournoi_OK() {
+        Long tournoiId = 1L;
+        TournoiEntity tournoi = new TournoiEntity();
+        tournoi.setId(tournoiId);
+        tournoi.setJoueurs(List.of(new JoueurEntity(), new JoueurEntity(), new JoueurEntity()));
+        tournoi.setNombreMinJoueurs(2);
+        tournoi.setDateFinInscriptions(LocalDate.now().minusDays(1));
+
+        when(tournoiRepository.findById(tournoiId)).thenReturn(Optional.of(tournoi));
+
+        tournoiService.demarrerTournoi(tournoiId);
+
+        verify(tournoiRepository, times(1)).save(any(TournoiEntity.class));
+    }
+
+    @Test
+    void testDemarrerTournoi_TournoiNonTrouve() {
+
+        Long tournoiId = 1L;
+
+        when(tournoiRepository.findById(tournoiId)).thenReturn(Optional.empty());
+
+        EntityNotFoundException exception = assertThrows(EntityNotFoundException.class, () -> {
+            tournoiService.demarrerTournoi(tournoiId);
+        });
+
+        assertEquals("Tournoi non trouvé", exception.getMessage());
+        verify(tournoiRepository, times(1)).findById(tournoiId);
+    }
+
+    @Test
+    void testDemarrerTournoi_NombreMinimumParticipantsNonAtteint() {
+        Long tournoiId = 1L;
+
+        TournoiEntity tournoi = new TournoiEntity();
+        tournoi.setId(tournoiId);
+        tournoi.setNombreMinJoueurs(2);
+        tournoi.setJoueurs(List.of(new JoueurEntity()));
+
+        when(tournoiRepository.findById(tournoiId)).thenReturn(Optional.of(tournoi));
+
+        TournoiException exception = assertThrows(TournoiException.class, () -> {
+            tournoiService.demarrerTournoi(tournoiId);
+        });
+
+        assertEquals("Nombre minimum de participants non atteint", exception.getMessage());
+        verify(tournoiRepository, times(1)).findById(tournoiId);
+    }
+
+    @Test
+    void testDemarrerTournoi_DateFinInscriptionsPasDepassee() {
+        Long tournoiId = 1L;
+
+        TournoiEntity tournoi = new TournoiEntity();
+        tournoi.setId(tournoiId);
+        tournoi.setDateFinInscriptions(LocalDate.now().plusDays(1));
+
+        when(tournoiRepository.findById(tournoiId)).thenReturn(Optional.of(tournoi));
+
+        TournoiException exception = assertThrows(TournoiException.class, () -> {
+            tournoiService.demarrerTournoi(tournoiId);
+        });
+
+        assertEquals("La date de fin des inscriptions n'est pas dépassée", exception.getMessage());
+        verify(tournoiRepository, times(1)).findById(tournoiId);
+    }
+
+    @Test
+    void testDemarrerTournoi_NombreImpairJoueurs() {
+        Long tournoiId = 1L;
+        TournoiEntity tournoi = new TournoiEntity();
+        tournoi.setId(tournoiId);
+        tournoi.setJoueurs(List.of(new JoueurEntity(), new JoueurEntity(), new JoueurEntity())); // Nombre impair de joueurs
+        tournoi.setNombreMinJoueurs(2);
+        tournoi.setDateFinInscriptions(LocalDate.now().minusDays(1));
+
+        when(tournoiRepository.findById(tournoiId)).thenReturn(Optional.of(tournoi));
+
+        tournoiService.demarrerTournoi(tournoiId);
+
+        verify(tournoiRepository, times(1)).findById(tournoiId);
+        verify(tournoiRepository, times(1)).save(any(TournoiEntity.class));
+    }
+
+    @Test
+    void testDemarrerTournoi_NombrePairJoueurs() {
+        Long tournoiId = 1L;
+        TournoiEntity tournoi = new TournoiEntity();
+        tournoi.setId(tournoiId);
+        tournoi.setJoueurs(List.of(new JoueurEntity(), new JoueurEntity()));
+        tournoi.setNombreMinJoueurs(2);
+        tournoi.setDateFinInscriptions(LocalDate.now().minusDays(1));
+
+        when(tournoiRepository.findById(tournoiId)).thenReturn(Optional.of(tournoi));
+
+        tournoiService.demarrerTournoi(tournoiId);
+
+        verify(tournoiRepository, times(1)).findById(tournoiId);
+        verify(tournoiRepository, times(1)).save(any(TournoiEntity.class));
+    }
 
 }

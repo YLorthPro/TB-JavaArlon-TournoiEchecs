@@ -67,4 +67,10 @@ public class TournoiController {
     public void desinscriptionTournoi(@PathVariable Long tournoiId, Authentication authentication) {
         tournoiService.desinscriptionTournoi(tournoiId, authentication.getName());
     }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/demarrer/{id:[0-9]+}")
+    public void demarrerTournoi(@PathVariable Long id) {
+        tournoiService.demarrerTournoi(id);
+    }
 }

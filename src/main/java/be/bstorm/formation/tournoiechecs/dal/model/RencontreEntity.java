@@ -11,7 +11,8 @@ public class RencontreEntity {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
     private int numeroRonde;
-    private String resultat;
+    @Enumerated(EnumType.STRING)
+    private Resultat resultat;
 
     @ManyToOne
     @JoinColumn(name = "tournoi_id")
