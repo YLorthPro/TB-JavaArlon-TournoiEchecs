@@ -15,6 +15,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 
 @Component
@@ -72,10 +73,10 @@ public class JWTProvider {
             if (!user.isEnabled())
                 return false;
 
-            //4 les roles soient bons (on ne le fait pas tout le temps)
-            List<Role> tokenRoles = jwt.getClaim("roles").asList(Role.class);
+            //4 les roles soient bons
+            List<Role> roles = Arrays.stream(Role.values()).toList();
 
-            return tokenRoles.contains(user.getRole());
+            return roles.contains(user.getRole());
             
             
         }catch (JWTVerificationException | UsernameNotFoundException ex) {

@@ -164,6 +164,7 @@ public class TournoiServiceImpl implements TournoiService {
             joueurs.add(1, joueurs.remove(joueurs.size() - 1));
         }
 
+        tournoi.setStatut(Statut.EN_COURS);
         tournoiRepository.save(tournoi);
     }
 
@@ -184,7 +185,7 @@ public class TournoiServiceImpl implements TournoiService {
     public void passerTourSuivant(Long tournoiId) {
         TournoiEntity tournoi = tournoiRepository.findById(tournoiId).orElseThrow(() -> new EntityNotFoundException("Tournoi non trouvé"));
 
-        Specification<RencontreEntity> specification = (root, query, criteriaBuilder)-> criteriaBuilder.equal(root.get("tournoiId"), tournoiId);
+        Specification<RencontreEntity> specification = (root, query, criteriaBuilder)-> criteriaBuilder.equal(root.get("tournoi_id"), tournoiId);
 
         List<RencontreEntity> rencontres = rencontreRepository.findAll(specification);
         for (RencontreEntity rencontre : rencontres) {
