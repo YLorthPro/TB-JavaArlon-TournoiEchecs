@@ -18,8 +18,8 @@ spring:
         format_sql: true
 
   mail:
-    host: localhost
-    port: 2525
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
     username: checkmate@chess.be
     password: ILoveChess
     properties:
