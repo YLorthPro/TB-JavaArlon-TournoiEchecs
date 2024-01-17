@@ -4,12 +4,10 @@ import be.bstorm.formation.tournoiechecs.bll.service.JoueurService;
 import be.bstorm.formation.tournoiechecs.pl.model.form.JoueurForm;
 import be.bstorm.formation.tournoiechecs.pl.model.form.LoginForm;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/joueur")
@@ -23,6 +21,7 @@ public class JoueurController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/inscription")
+    @ResponseStatus(HttpStatus.CREATED)
     public void inscription(@RequestBody @Valid JoueurForm joueur) {
         joueurService.inscription(joueur);
     }

@@ -128,14 +128,19 @@ public class TournoiServiceTest {
     void testRecherche() {
         Pageable pageable = PageRequest.of(0, 10);
         TournoiSearchForm form = new TournoiSearchForm("",Statut.EN_COURS,List.of(Categorie.JUNIOR));
-        Page<TournoiEntity> tournois = new PageImpl<>(new ArrayList<>());
+        TournoiEntity tournoi = new TournoiEntity();
+        tournoi.setNom("Test");
+        tournoi.setLieu("Arlon");
+        tournoi.setCategories(Set.of(Categorie.JUNIOR));
+        tournoi.setStatut(Statut.EN_COURS);
+        Page<TournoiEntity> tournois = new PageImpl<>(List.of(tournoi));
 
         when(tournoiRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(tournois);
 
         Page<TournoiEntity> result = tournoiService.recherche(form, pageable);
 
         verify(tournoiRepository, times(1)).findAll(any(Specification.class), eq(pageable));
-        assertEquals(tournois, result);
+        assertEquals(tournois.getContent(), result.getContent());
     }
 
     @Test
@@ -761,7 +766,7 @@ public class TournoiServiceTest {
         RencontreEntity rencontre = new RencontreEntity();
         rencontre.setTournoi(tournoi);
         rencontre.setNumeroRonde(1);
-        rencontre.setResultat(null);
+        rencontre.setResultat(Resultat.PAS_ENCORE_JOUEE);
 
         when(tournoiRepository.findById(tournoiId)).thenReturn(Optional.of(tournoi));
         when(rencontreRepository.findAll(any(Specification.class))).thenReturn(List.of(rencontre));

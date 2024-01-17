@@ -31,9 +31,9 @@ public class JoueurEntity implements UserDetails {
     private LocalDate dateDeNaissance;
     @Enumerated(value = EnumType.STRING)
     private Genre genre;
-    private int eLO;
+    private int eLO = 1200;
     @Enumerated(value = EnumType.STRING)
-    private Role role;
+    private Role role = Role.JOUEUR;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

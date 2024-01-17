@@ -1,5 +1,6 @@
 package be.bstorm.formation.tournoiechecs.bll;
 
+import be.bstorm.formation.tournoiechecs.bll.service.impl.EmailServiceImpl;
 import be.bstorm.formation.tournoiechecs.bll.service.impl.JoueurServiceImpl;
 import be.bstorm.formation.tournoiechecs.dal.model.Genre;
 import be.bstorm.formation.tournoiechecs.dal.model.JoueurEntity;
@@ -8,6 +9,7 @@ import be.bstorm.formation.tournoiechecs.dal.repository.JoueurRepository;
 import be.bstorm.formation.tournoiechecs.pl.config.security.JWTProvider;
 import be.bstorm.formation.tournoiechecs.pl.model.form.JoueurForm;
 import be.bstorm.formation.tournoiechecs.pl.model.form.LoginForm;
+import jakarta.mail.MessagingException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -15,10 +17,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDate;
 import java.util.Optional;
@@ -26,21 +30,24 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class JoueurServiceTest {
 
     @InjectMocks
     JoueurServiceImpl joueurService;
-
     @Mock
     JoueurRepository joueurRepository;
     @Mock
     JWTProvider jwtProvider;
     @Mock
     AuthenticationManager authenticationManager;
+    @Mock
+    PasswordEncoder passwordEncoder;
+    @Mock
+    EmailServiceImpl emailService;
 
     @Test
     public void testInscription_WithELO() {
@@ -55,8 +62,15 @@ public class JoueurServiceTest {
         joueurEntity.setRole(Role.JOUEUR);
         joueurEntity.setELO(1000);
         when(joueurRepository.save(any(JoueurEntity.class))).thenReturn(joueurEntity);
+        when(passwordEncoder.encode(anyString())).thenReturn("Test1234=");
 
-       joueurService.inscription(joueurForm);
+        try {
+            doNothing().when(emailService).nouveauJoueurCree(any(JoueurEntity.class));
+        }catch (MessagingException ex){
+            System.out.println(ex.getMessage());
+        }
+
+        joueurService.inscription(joueurForm);
 
         verify(joueurRepository, Mockito.times(1)).save(any(JoueurEntity.class));
     }
@@ -66,6 +80,13 @@ public class JoueurServiceTest {
 
         JoueurForm joueurForm = new JoueurForm("John","johnDoe@gmail.com", LocalDate.now().minusYears(20), Genre.GARCON, null, Role.JOUEUR);
         when(joueurRepository.save(any(JoueurEntity.class))).thenReturn(null);
+        when(passwordEncoder.encode(anyString())).thenReturn("Test1234=");
+
+        try {
+            doNothing().when(emailService).nouveauJoueurCree(any(JoueurEntity.class));
+        }catch (MessagingException ex){
+            System.out.println(ex.getMessage());
+        }
 
         joueurService.inscription(joueurForm);
 
@@ -84,6 +105,18 @@ public class JoueurServiceTest {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> joueurService.inscription(joueurForm));
 
         assertEquals("form peut pas être null", exception.getMessage());
+    }
+
+    @Test
+    public void testInscription_ExisteDeja() {
+        JoueurForm joueurForm = new JoueurForm("Test","test@test.be",LocalDate.now().minusYears(16),Genre.GARCON,null,Role.JOUEUR);
+
+        when(joueurRepository.exists(any(Specification.class))).thenReturn(true);
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+            joueurService.inscription(joueurForm));
+
+        assertEquals("Login ou email déjà existant", exception.getMessage());
     }
 
     @Test
@@ -127,6 +160,18 @@ public class JoueurServiceTest {
         });
 
         assertEquals("Mauvais mot de passe", exception.getMessage());
+    }
+
+    @Test
+    void testLogin_FormNull() {
+
+        LoginForm form = null;
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            joueurService.login(form);
+        });
+
+        assertEquals("Form peut pas être null", exception.getMessage());
     }
 
 

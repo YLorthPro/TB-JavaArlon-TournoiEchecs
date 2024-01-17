@@ -8,17 +8,22 @@ import be.bstorm.formation.tournoiechecs.pl.model.dto.Error;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.ConstraintDefinitionException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.nio.file.AccessDeniedException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestControllerAdvice
 public class ControllerAdvisor {
@@ -33,12 +38,11 @@ public class ControllerAdvisor {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Error(ex.getMessage(), LocalDateTime.now(), req.getRequestURI()));
     }
 
-    @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<Error> handleConstraintViolationException(ConstraintViolationException ex, HttpServletRequest req) {
-        List<String> errors = new ArrayList<>();
-        ex.getConstraintViolations().forEach(violation -> errors.add(violation.getMessage()));
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Error(errors.toString(), LocalDateTime.now(), req.getRequestURI()));
+    @ExceptionHandler(ConstraintDefinitionException.class)
+    public ResponseEntity<Error> handleConstraintDefinitionException(ConstraintDefinitionException ex, HttpServletRequest req){
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Error(ex.getMessage(), LocalDateTime.now(), req.getRequestURI()));
     }
+
 
     @ExceptionHandler(InscriptionTournoiException.class)
     public ResponseEntity<Error> handleInscriptionTournoiException(InscriptionTournoiException ex, HttpServletRequest req) {
@@ -65,6 +69,11 @@ public class ControllerAdvisor {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new Error(ex.getMessage(), LocalDateTime.now(), req.getRequestURI()));
     }
 
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Error> handleAccessDeniedException(AccessDeniedException ex, HttpServletRequest req) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new Error(ex.getMessage(), LocalDateTime.now(), req.getRequestURI()));
+    }
+
     @ExceptionHandler(JWTVerificationException.class)
     public ResponseEntity<Error> handleJWTVerificationException(JWTVerificationException ex, HttpServletRequest req) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new Error(ex.getMessage(), LocalDateTime.now(), req.getRequestURI()));
@@ -73,6 +82,28 @@ public class ControllerAdvisor {
     @ExceptionHandler(UsernameNotFoundException.class)
     public ResponseEntity<Error> handleUsernameNotFoundException(UsernameNotFoundException ex, HttpServletRequest req) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Error(ex.getMessage(), LocalDateTime.now(), req.getRequestURI()));
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Error> handleInvalidForm(MethodArgumentNotValidException ex, HttpServletRequest req){
+
+        List<String> errorMap = new ArrayList<>();
+
+        ex.getBindingResult().getAllErrors().forEach(e -> {
+            String message = e.getDefaultMessage();
+            errorMap.add(message);
+        });
+
+        String errorsList = "{";
+
+        for (String message: errorMap) {
+            errorsList += message + ", ";
+        }
+
+        errorsList = errorsList.substring(0,errorsList.length()-2) + "}";
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new Error(errorsList,LocalDateTime.now(),req.getRequestURI()));
+
     }
 
 

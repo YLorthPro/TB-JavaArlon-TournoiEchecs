@@ -1,14 +1,3 @@
 spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5434/gestionTournoiEchecs
-    username: postgres
-    password: password
-    driver-class-name: org.postgresql.Driver
-
-  jpa:
-    show-sql: true
-    hibernate:
-      ddl-auto: create
-    properties:
-      hibernate:
-        format_sql: true
+  profiles:
+    active: @spring.profiles.active@

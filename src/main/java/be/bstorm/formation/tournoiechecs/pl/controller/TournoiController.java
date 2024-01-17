@@ -11,6 +11,7 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -30,6 +31,7 @@ public class TournoiController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/creation")
+    @ResponseStatus(HttpStatus.CREATED)
     public void creationTournoi(@RequestBody @Valid TournoiForm form) {
         tournoiService.creationTournoi(form);
     }
@@ -47,7 +49,7 @@ public class TournoiController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping("/recherche")
+    @PostMapping("/recherche")
     public ResponseEntity<Page<TournoiListe>> recherche(@RequestBody TournoiSearchForm form, Pageable pageable) {
         return ResponseEntity.ok(tournoiService.recherche(form, pageable).map(TournoiListe::fromBll));
     }
@@ -59,19 +61,19 @@ public class TournoiController {
     }
 
     @PreAuthorize("isAuthenticated()")
-    @GetMapping("/inscription/{tournoiId:[0-9]+}")
+    @PutMapping("/inscription/{tournoiId:[0-9]+}")
     public void inscriptionTournoi(@PathVariable Long tournoiId, Authentication authentication) {
         tournoiService.inscriptionTournoi(tournoiId, authentication.getName());
     }
 
     @PreAuthorize("isAuthenticated()")
-    @GetMapping("/desinscription/{tournoiId:[0-9]+}")
+    @PatchMapping("/desinscription/{tournoiId:[0-9]+}")
     public void desinscriptionTournoi(@PathVariable Long tournoiId, Authentication authentication) {
         tournoiService.desinscriptionTournoi(tournoiId, authentication.getName());
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping("/demarrer/{id:[0-9]+}")
+    @PatchMapping("/demarrer/{id:[0-9]+}")
     public void demarrerTournoi(@PathVariable Long id) {
         tournoiService.demarrerTournoi(id);
     }
@@ -83,7 +85,7 @@ public class TournoiController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping("/tourSuivant/{tournoiId:[0-9]+}")
+    @PatchMapping("/tourSuivant/{tournoiId:[0-9]+}")
     public void passerTourSuivant(@PathVariable Long tournoiId) {
         tournoiService.passerTourSuivant(tournoiId);
     }

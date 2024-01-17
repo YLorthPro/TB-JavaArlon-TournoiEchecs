@@ -1,0 +1,11 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+    <h2>Bonjour <span th:text="${joueur.pseudo}"></span>,</h2>
+    <p>Votre compte a été créé avec succès avec le nom d'utilisateur suivant : <strong th:text="${joueur.pseudo}">Username</strong></p>
+    <p>Votre mot de passe est : <strong th:text="${joueur.password}">Mot de passe</strong></p>
+    <br/>
+    <p>Echequements vôtre,</p>
+    <p>Monsieur Checkmate</p>
+</body>
+</html>

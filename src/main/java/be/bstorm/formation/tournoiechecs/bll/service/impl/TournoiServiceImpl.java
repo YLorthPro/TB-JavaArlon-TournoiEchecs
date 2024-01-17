@@ -10,12 +10,15 @@ import be.bstorm.formation.tournoiechecs.dal.model.*;
 import be.bstorm.formation.tournoiechecs.dal.repository.JoueurRepository;
 import be.bstorm.formation.tournoiechecs.dal.repository.RencontreRepository;
 import be.bstorm.formation.tournoiechecs.dal.repository.TournoiRepository;
-import be.bstorm.formation.tournoiechecs.pl.model.dto.Joueur;
 import be.bstorm.formation.tournoiechecs.pl.model.form.TournoiForm;
 import be.bstorm.formation.tournoiechecs.pl.model.form.TournoiSearchForm;
+import jakarta.mail.MessagingException;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -25,6 +28,8 @@ import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class TournoiServiceImpl implements TournoiService {
@@ -32,13 +37,15 @@ public class TournoiServiceImpl implements TournoiService {
     private final TournoiRepository tournoiRepository;
     private final JoueurRepository joueurRepository;
     private final RencontreRepository rencontreRepository;
+    private final EmailServiceImpl emailService;
 
     public TournoiServiceImpl(TournoiRepository tournoiRepository,
                               JoueurRepository joueurRepository,
-                              RencontreRepository rencontreRepository) {
+                              RencontreRepository rencontreRepository, EmailServiceImpl emailService) {
         this.tournoiRepository = tournoiRepository;
         this.joueurRepository = joueurRepository;
         this.rencontreRepository = rencontreRepository;
+        this.emailService = emailService;
     }
 
 
@@ -62,8 +69,16 @@ public class TournoiServiceImpl implements TournoiService {
         entity.setDateCreation(LocalDate.now());
         entity.setDateModification(LocalDate.now());
 
-        tournoiRepository.save(entity);
+        TournoiEntity finalEntity = tournoiRepository.save(entity);
 
+        joueurRepository.findAll(joueurSpecification(finalEntity))
+                .forEach(joueur -> {
+                    try {
+                        emailService.nouveauTournoiCree(joueur, finalEntity);
+                    } catch(MessagingException ex){
+                        System.out.println("Erreur mail: " + ex.getMessage());
+                    }
+                });
     }
 
     @Override
@@ -83,8 +98,15 @@ public class TournoiServiceImpl implements TournoiService {
 
     @Override
     public Page<TournoiEntity> recherche(TournoiSearchForm form, Pageable pageable) {
-        return tournoiRepository.findAll(specification(form),pageable);
+
+        Page<TournoiEntity> originalPage = tournoiRepository.findAll(tournoiSpecification(form), pageable);
+        List<TournoiEntity> filteredList = originalPage.stream()
+                .filter(tournoiEntity -> tournoiEntity.getCategories().containsAll(form.categories()))
+                .collect(Collectors.toList());
+
+        return new PageImpl<>(filteredList, pageable, filteredList.size());
     }
+
     @Override
     public Optional<TournoiEntity> getTournoiById(Long id) {
         return tournoiRepository.findById(id);
@@ -185,11 +207,14 @@ public class TournoiServiceImpl implements TournoiService {
     public void passerTourSuivant(Long tournoiId) {
         TournoiEntity tournoi = tournoiRepository.findById(tournoiId).orElseThrow(() -> new EntityNotFoundException("Tournoi non trouvé"));
 
-        Specification<RencontreEntity> specification = (root, query, criteriaBuilder)-> criteriaBuilder.equal(root.get("tournoi_id"), tournoiId);
+        Specification<RencontreEntity> specification = (root, query, criteriaBuilder)-> criteriaBuilder.and(
+                criteriaBuilder.equal(root.get("tournoi").get("id"), tournoiId),
+                criteriaBuilder.equal(root.get("numeroRonde"),tournoi.getRonde())
+        );
 
         List<RencontreEntity> rencontres = rencontreRepository.findAll(specification);
         for (RencontreEntity rencontre : rencontres) {
-            if (rencontre.getResultat() == null) {
+            if (rencontre.getResultat() == Resultat.PAS_ENCORE_JOUEE) {
                 throw new TournoiException("Toutes les rencontres de la ronde courante doivent avoir été jouées avant de pouvoir passer à la ronde suivante");
             }
         }
@@ -204,7 +229,7 @@ public class TournoiServiceImpl implements TournoiService {
         List<JoueurEntity> joueurs = tournoiRepository.findById(tournoiId).orElseThrow(()-> new EntityNotFoundException("Tournoi non trouvé")).getJoueurs();
 
         Specification<RencontreEntity> spec = (root, query, criteriaBuilder) ->
-                criteriaBuilder.and(criteriaBuilder.equal(root.get("tournoiId"),tournoiId), criteriaBuilder.lessThanOrEqualTo(root.get("ronde"), ronde));
+                criteriaBuilder.and(criteriaBuilder.equal(root.get("tournoi").get("id"),tournoiId), criteriaBuilder.lessThanOrEqualTo(root.get("numeroRonde"), ronde));
 
         List<RencontreEntity> rencontresRonde = rencontreRepository.findAll(spec);
 
@@ -303,7 +328,7 @@ public class TournoiServiceImpl implements TournoiService {
         return tournoi.getJoueurs().contains(joueur);
     }
 
-    private Specification<TournoiEntity> specification (TournoiSearchForm form){
+    private Specification<TournoiEntity> tournoiSpecification(TournoiSearchForm form){
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -315,13 +340,45 @@ public class TournoiServiceImpl implements TournoiService {
                 predicates.add(criteriaBuilder.equal(root.get("statut"), form.statut()));
             }
 
-            if (form.categories() != null && !form.categories().isEmpty()) {
-                predicates.add(root.get("categories").in(form.categories()));
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
+    }
+
+    private Specification<JoueurEntity> joueurSpecification(TournoiEntity tournoi) {
+        return (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            // ELO du joueur
+            if(tournoi.getELOMax()!= null) {
+                predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("eLO"), tournoi.getELOMax()));
+            }
+
+            if(tournoi.getELOMin()!= null) {
+                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("eLO"), tournoi.getELOMin()));
+            }
+
+            // Tournoi féminin seulement
+            if(tournoi.isWomenOnly()){
+                predicates.add(criteriaBuilder.notEqual(root.get("genre"), Genre.GARCON));
+            }
+
+            if (tournoi.getCategories() != null && !tournoi.getCategories().isEmpty()) {
+                List<Predicate> categoryPredicates = new ArrayList<>();
+                if(tournoi.getCategories().contains(Categorie.JUNIOR))
+                    categoryPredicates.add(criteriaBuilder.greaterThan(root.get("dateDeNaissance"), tournoi.getDateFinInscriptions().minusYears(18)));
+                if(tournoi.getCategories().contains(Categorie.SENIOR)) {
+                    Predicate seniorMinAge = criteriaBuilder.lessThanOrEqualTo(root.get("dateDeNaissance"), tournoi.getDateFinInscriptions().minusYears(18));
+                    Predicate seniorMaxAge = criteriaBuilder.greaterThan(root.get("dateDeNaissance"), tournoi.getDateFinInscriptions().minusYears(60));
+                    categoryPredicates.add(criteriaBuilder.and(seniorMinAge, seniorMaxAge));
+                }
+                if(tournoi.getCategories().contains(Categorie.VETERAN))
+                    categoryPredicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("dateDeNaissance"), tournoi.getDateFinInscriptions().minusYears(60)));
+
+                predicates.add(criteriaBuilder.or(categoryPredicates.toArray(new Predicate[0])));
             }
 
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
     }
-
 
 }

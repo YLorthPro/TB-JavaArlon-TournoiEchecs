@@ -12,7 +12,7 @@ public class RencontreEntity {
     private Long id;
     private int numeroRonde;
     @Enumerated(EnumType.STRING)
-    private Resultat resultat;
+    private Resultat resultat = Resultat.PAS_ENCORE_JOUEE;
 
     @ManyToOne
     @JoinColumn(name = "tournoi_id")

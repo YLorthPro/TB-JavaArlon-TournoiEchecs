@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Invitation à rejoindre le tournoi d'échecs</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body>
+    <p>Bonjour <span th:text="${joueur.pseudo}"></span>,</p>
+    <p>
+        Nous sommes ravis de vous annoncer le nouveau tournoi d'échecs : <strong th:text="${tournoi.nom}"></strong>.
+    </p>
+    <p>
+        La fin d'inscription pour ce tournoi est le <span th:text="${#temporals.format(tournoi.dateFinInscriptions, 'dd-MM-yyyy')}"></span>
+    </p>
+    <p>
+        Lieu: <span th:text="${tournoi.lieu}"></span>
+    </p>
+    <p>
+        Ne ratez pas cette occasion passionnante de participer à ce tournoi !<br/>
+    </p>
+    <p>
+        Cordialement,<br/>
+        Mr Checkmate
+    </p>
+</body>
+</html>
