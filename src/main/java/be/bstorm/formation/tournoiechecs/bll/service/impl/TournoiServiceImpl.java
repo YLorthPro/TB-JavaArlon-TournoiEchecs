@@ -14,8 +14,6 @@ import be.bstorm.formation.tournoiechecs.pl.model.form.TournoiForm;
 import be.bstorm.formation.tournoiechecs.pl.model.form.TournoiSearchForm;
 import jakarta.mail.MessagingException;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.persistence.criteria.Expression;
-import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;

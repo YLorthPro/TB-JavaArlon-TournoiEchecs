@@ -1,16 +1,22 @@
 package be.bstorm.formation.tournoiechecs.pl;
 
+import be.bstorm.formation.tournoiechecs.bll.service.impl.EmailServiceImpl;
+import be.bstorm.formation.tournoiechecs.dal.model.JoueurEntity;
 import be.bstorm.formation.tournoiechecs.dal.model.Resultat;
+import be.bstorm.formation.tournoiechecs.dal.model.TournoiEntity;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.*;
+import static org.mockito.Mockito.doNothing;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -21,6 +27,9 @@ public class TournoiIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @MockBean
+    private EmailServiceImpl emailService;
 
     @Test
     @WithMockUser(roles = "ADMIN")
@@ -39,6 +48,8 @@ public class TournoiIntegrationTest {
               "dateFinInscriptions": "2100-03-01"
             }
             """;
+
+        doNothing().when(emailService).nouveauTournoiCree(Mockito.any(JoueurEntity.class), Mockito.any(TournoiEntity.class));
 
         mockMvc.perform(post("/api/tournoi/creation")
                         .content(requestBody)

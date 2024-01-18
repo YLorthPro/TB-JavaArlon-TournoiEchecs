@@ -1,14 +1,20 @@
 package be.bstorm.formation.tournoiechecs.pl;
 
+import be.bstorm.formation.tournoiechecs.bll.service.impl.EmailServiceImpl;
+import be.bstorm.formation.tournoiechecs.dal.model.JoueurEntity;
+import be.bstorm.formation.tournoiechecs.dal.model.TournoiEntity;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
+import static org.mockito.Mockito.doNothing;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -18,6 +24,9 @@ public class JoueurIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @MockBean
+    private EmailServiceImpl emailService;
 
     @Test
     @WithMockUser(roles = "ADMIN")
@@ -32,6 +41,8 @@ public class JoueurIntegrationTest {
                   "role": "JOUEUR"
                 }
                 """;
+
+        doNothing().when(emailService).nouveauJoueurCree(Mockito.any(JoueurEntity.class));
 
         mockMvc.perform(MockMvcRequestBuilders.post("/api/joueur/inscription")
                         .content(requestBody)

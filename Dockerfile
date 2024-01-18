@@ -3,7 +3,7 @@ FROM maven:3.8-openjdk-17 AS builder
 WORKDIR /app
 COPY pom.xml .
 COPY src ./src
-RUN mvn clean install -DskipTests
+RUN mvn clean install -Ptest
 
 # Etape 2 créer l'image
 FROM openjdk:17

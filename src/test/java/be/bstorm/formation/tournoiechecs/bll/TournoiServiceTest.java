@@ -59,7 +59,7 @@ public class TournoiServiceTest {
     }
 
     @Test
-    public void creationTournoi_formNonNull_EntitySaved() {
+    public void creationTournoi_OK() {
         TournoiForm form = new TournoiForm("Nom","Lieu",2,6,1000,2000, Set.of(Categorie.JUNIOR), Statut.EN_COURS,false, LocalDate.now().plusDays(10));
 
         tournoiService.creationTournoi(form);
