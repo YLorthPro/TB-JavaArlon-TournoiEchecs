@@ -8,8 +8,8 @@ RUN mvn clean install -DskipTests
 # Etape 2 créer l'image
 FROM openjdk:17
 ARG JAR_FILE=/app/target/*.jar
-COPY --from=builder ${JAR_FILE} tournoiEchec.jar
+COPY --from=builder ${JAR_FILE} tournoiEchecs.jar
 EXPOSE 8080
-ENTRYPOINT ["java","-jar", "/tournoiEchec.jar"]
+ENTRYPOINT ["java","-jar", "/tournoiEchecs.jar"]
 
 

@@ -4,7 +4,7 @@ spring:
       on-profile: dev
 
   datasource:
-    url: jdbc:postgresql://localhost:5434/gestionTournoiEchecs
+    url: jdbc:postgresql://localhost:5432/gestiontournoiechecs
     username: postgres
     password: password
     driver-class-name: org.postgresql.Driver
