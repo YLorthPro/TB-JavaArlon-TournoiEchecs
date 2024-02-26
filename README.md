@@ -371,7 +371,13 @@ Int ronde;
 
 ###### Réponse
 
-- token
+```json
+{
+  "token": "string",
+  "role": "ADMIN",
+  "username": "string"
+}
+```
 
 ##### inscription (joueur)
 
