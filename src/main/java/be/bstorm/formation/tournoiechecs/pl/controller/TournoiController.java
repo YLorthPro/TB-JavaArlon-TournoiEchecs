@@ -21,6 +21,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/tournoi")
+@CrossOrigin("*")
 public class TournoiController {
 
     private final TournoiService tournoiService;
