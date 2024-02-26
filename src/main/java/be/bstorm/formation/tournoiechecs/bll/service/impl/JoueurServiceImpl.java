@@ -4,6 +4,7 @@ import be.bstorm.formation.tournoiechecs.bll.service.JoueurService;
 import be.bstorm.formation.tournoiechecs.dal.model.JoueurEntity;
 import be.bstorm.formation.tournoiechecs.dal.repository.JoueurRepository;
 import be.bstorm.formation.tournoiechecs.pl.config.security.JWTProvider;
+import be.bstorm.formation.tournoiechecs.pl.model.dto.Auth;
 import be.bstorm.formation.tournoiechecs.pl.model.form.JoueurForm;
 import be.bstorm.formation.tournoiechecs.pl.model.form.LoginForm;
 import jakarta.mail.MessagingException;
@@ -67,7 +68,7 @@ public class JoueurServiceImpl implements JoueurService {
     }
 
     @Override
-    public String login(LoginForm form) {
+    public Auth login(LoginForm form) {
         if(form == null)
             throw new IllegalArgumentException("Form peut pas être null");
 
@@ -76,7 +77,7 @@ public class JoueurServiceImpl implements JoueurService {
         JoueurEntity joueur = joueurRepository.findByPseudoOrEmail(form.identifiant(),form.identifiant())
                 .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouvé"));
 
-        return jwtProvider.generateToken(joueur.getUsername(), joueur.getRole());
+        return new Auth(jwtProvider.generateToken(joueur.getUsername(), joueur.getRole()), joueur.getRole(), joueur.getUsername());
     }
 
     private String setMotDePasse() {

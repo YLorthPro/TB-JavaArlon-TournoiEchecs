@@ -1,6 +1,7 @@
 package be.bstorm.formation.tournoiechecs.pl.controller;
 
 import be.bstorm.formation.tournoiechecs.bll.service.JoueurService;
+import be.bstorm.formation.tournoiechecs.pl.model.dto.Auth;
 import be.bstorm.formation.tournoiechecs.pl.model.form.JoueurForm;
 import be.bstorm.formation.tournoiechecs.pl.model.form.LoginForm;
 import jakarta.validation.Valid;
@@ -28,7 +29,7 @@ public class JoueurController {
 
     @PreAuthorize("isAnonymous()")
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginForm form) {
+    public ResponseEntity<Auth> login(@RequestBody LoginForm form) {
         return ResponseEntity.ok(joueurService.login(form));
     }
 }
